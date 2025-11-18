@@ -163,6 +163,7 @@ function normalizeShareItem(
         singleton?: boolean;
         requiredVersion?: string;
         strictVersion?: boolean;
+        isEsm?: boolean;
       }
 ): ShareItem {
   let version: string | undefined;
@@ -209,6 +210,7 @@ function normalizeShareItem(
       singleton: shareItem.singleton || false,
       requiredVersion: shareItem.requiredVersion || (version ? `^${version}` : '*'),
       strictVersion: !!shareItem.strictVersion,
+      isEsm: !!shareItem.isEsm,
     },
   };
 }

@@ -50,7 +50,27 @@ export function writeLoadShareModule(pkg: string, shareItem: ShareItem, command:
       strictVersion: ${shareItem.shareConfig.strictVersion},
       requiredVersion: ${JSON.stringify(shareItem.shareConfig.requiredVersion)}
     }}}))
-    const exportModule = ${command !== 'build' ? '/*mf top-level-await placeholder replacement mf*/' : 'await '}res.then(factory => factory())
+    let exportModule = ${command !== 'build' ? '/*mf top-level-await placeholder replacement mf*/' : 'await '}res.then(factory => factory())
     module.exports = exportModule
+  `);
+}
+
+export function writeLoadShareModuleESM(pkg: string, shareItem: ShareItem, command: string) {
+  loadShareCacheMap[pkg].writeSync(`
+
+    ;() => import(${JSON.stringify(getPreBuildLibImportId(pkg))}).catch(() => {});
+    // dev uses dynamic import to separate chunks
+    ${command !== 'build' ? `;() => import(${JSON.stringify(pkg)}).catch(() => {});` : ''}
+    import {loadShare} from "@module-federation/runtime"
+    const {initPromise} = await import("${virtualRuntimeInitStatus.getImportId()}")
+    const res = initPromise.then(_ => loadShare(${JSON.stringify(pkg)}, {
+    customShareInfo: {shareConfig:{
+      singleton: ${shareItem.shareConfig.singleton},
+      strictVersion: ${shareItem.shareConfig.strictVersion},
+      requiredVersion: ${JSON.stringify(shareItem.shareConfig.requiredVersion)}
+    }}}))
+    const moduleFactory = ${command !== 'build' ? '/*mf top-level-await placeholder replacement mf*/' : 'await '}res.then(factory => factory())
+    // ESM re-export instead of module.exports
+    export default moduleFactory.default;
   `);
 }

@@ -10,6 +10,7 @@ import {
   getLocalSharedImportMapPath,
   PREBUILD_TAG,
   writeLoadShareModule,
+  writeLoadShareModuleESM,
   writeLocalSharedImportMap,
   writePreBuildLibPath,
 } from '../virtualModules';
@@ -26,7 +27,7 @@ export function proxySharedModule(options: {
     {
       name: 'generateLocalSharedImportMap',
       enforce: 'post',
-      load(id) {
+      load(id: any) {
         if (id.includes(getLocalSharedImportMapPath())) {
           return parsePromise.then((_) => generateLocalSharedImportMap());
         }
@@ -42,10 +43,10 @@ export function proxySharedModule(options: {
     {
       name: 'proxyPreBuildShared',
       enforce: 'post',
-      configResolved(config) {
+      configResolved(config: any) {
         _config = config as any;
       },
-      config(config: UserConfig, { command }) {
+      config(config: UserConfig, { command }: any) {
         (config.resolve as any).alias.push(
           ...Object.keys(shared).map((key) => {
             const pattern = key.endsWith('/')
@@ -58,7 +59,12 @@ export function proxySharedModule(options: {
               customResolver(source: string, importer: string) {
                 if (/\.css$/.test(source)) return;
                 const loadSharePath = getLoadShareModulePath(source);
-                writeLoadShareModule(source, shared[key], command);
+                const sharedItem = shared[key];
+                if (sharedItem.shareConfig.isEsm) {
+                  writeLoadShareModuleESM(source, sharedItem, command);
+                } else {
+                  writeLoadShareModule(source, sharedItem, command);
+                }
                 writePreBuildLibPath(source);
                 addUsedShares(source);
                 writeLocalSharedImportMap();

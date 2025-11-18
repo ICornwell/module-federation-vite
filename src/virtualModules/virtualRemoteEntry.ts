@@ -79,12 +79,20 @@ export function generateLocalSharedImportMap() {
               const res = await pkgDynamicImport()
               const exportModule = {...res}
               // All npm packages pre-built by vite will be converted to esm
-              Object.defineProperty(exportModule, "__esModule", {
-                value: true,
-                enumerable: false
+              // removed code below
+              // Object.defineProperty(exportModule, "__esModule", {
+              //   value: true,
+              //   enumerable: false
               })
               return function () {
-                return exportModule
+                if (!exportModule.default) {
+                  return exportModule
+                } else {
+                  const mod = exportModule.default;
+                  Object.assign(mod, exportModule);
+                  delete exportModule.default;
+                  return mod;
+                }
               }
             },
             shareConfig: {

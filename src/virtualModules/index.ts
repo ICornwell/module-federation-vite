@@ -26,6 +26,7 @@ export {
   LOAD_SHARE_TAG,
   PREBUILD_TAG,
   writeLoadShareModule,
+  writeLoadShareModuleESM,
   writePreBuildLibPath,
 } from './virtualShared_preBuild';
 
