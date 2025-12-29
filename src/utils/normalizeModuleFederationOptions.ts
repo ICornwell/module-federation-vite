@@ -104,7 +104,7 @@ export interface ShareItem {
   version: string | undefined;
   scope: string;
   from: string;
-  shareConfig: SharedConfig & sharePlugin.SharedConfig;
+  shareConfig: SharedConfig & sharePlugin.SharedConfig & { isEsm?: boolean };
 }
 
 function removePathFromNpmPackage(packageString: string): string {

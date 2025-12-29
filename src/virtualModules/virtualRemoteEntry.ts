@@ -83,7 +83,7 @@ export function generateLocalSharedImportMap() {
               // Object.defineProperty(exportModule, "__esModule", {
               //   value: true,
               //   enumerable: false
-              })
+              // })
               return function () {
                 if (!exportModule.default) {
                   return exportModule
