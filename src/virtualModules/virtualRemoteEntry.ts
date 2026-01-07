@@ -90,7 +90,7 @@ export function generateLocalSharedImportMap() {
                 } else {
                   const mod = exportModule.default;
                   Object.assign(mod, exportModule);
-                  delete exportModule.default;
+                  delete mod.default;
                   return mod;
                 }
               }

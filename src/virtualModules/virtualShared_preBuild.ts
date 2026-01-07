@@ -9,6 +9,7 @@
  * 2. __loadShare__: load shareModule (mfRuntime.loadShare('vue'))
  */
 
+import { dirname, join } from 'path';
 import { ShareItem } from '../utils/normalizeModuleFederationOptions';
 import VirtualModule from '../utils/VirtualModule';
 import { virtualRuntimeInitStatus } from './virtualRuntimeInitStatus';
@@ -56,6 +57,8 @@ export function writeLoadShareModule(pkg: string, shareItem: ShareItem, command:
 }
 
 export function writeLoadShareModuleESM(pkg: string, shareItem: ShareItem, command: string) {
+  const vm = new VirtualModule(pkg);
+  const mod = require(join(dirname(vm.getPath()), '..', pkg));
   loadShareCacheMap[pkg].writeSync(`
 
     ;() => import(${JSON.stringify(getPreBuildLibImportId(pkg))}).catch(() => {});
@@ -63,14 +66,26 @@ export function writeLoadShareModuleESM(pkg: string, shareItem: ShareItem, comma
     ${command !== 'build' ? `;() => import(${JSON.stringify(pkg)}).catch(() => {});` : ''}
     import {loadShare} from "@module-federation/runtime"
     const {initPromise} = await import("${virtualRuntimeInitStatus.getImportId()}")
+    
     const res = initPromise.then(_ => loadShare(${JSON.stringify(pkg)}, {
     customShareInfo: {shareConfig:{
       singleton: ${shareItem.shareConfig.singleton},
       strictVersion: ${shareItem.shareConfig.strictVersion},
-      requiredVersion: ${JSON.stringify(shareItem.shareConfig.requiredVersion)}
+      requiredVersion: ${JSON.stringify(shareItem.shareConfig.requiredVersion)},
+      isEsm: true
     }}}))
-    const moduleFactory = ${command !== 'build' ? '/*mf top-level-await placeholder replacement mf*/' : 'await '}res.then(factory => factory())
+    const moduleFactory = ${command === 'nope' ? '/* no mf top-level-await placeholder replacement mf here!*/' : 'await '}res.then(factory => factory())
     // ESM re-export instead of module.exports
-    export default moduleFactory.default;
+
+${Object.keys(mod)
+  .filter((key) => key !== 'default')
+  .map((key) => `\tlet mf_${key} = moduleFactory.${key}`)
+  .join(';\n')}
+
+    export { ${Object.keys(mod)
+      .filter((key) => key !== 'default')
+      .map((key) => `mf_${key} as ${key}`)
+      .join(', ')} };
+    export default moduleFactory;
   `);
 }
